@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { initSocket } from "@/utils/socket";
 import "../app/globals.css";
+import ReactMarkdown from "react-markdown";
 
 export default function ChatUI() {
   const [socket, setSocket] = useState(null);
@@ -17,6 +18,18 @@ export default function ChatUI() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // 💾 Save messages to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("chatMessages", JSON.stringify(messages));
+  }, [messages]);
+
+  // 💾 Load messages from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("chatMessages");
+    if (saved) setMessages(JSON.parse(saved));
+  }, []);
+
 
   // Initialize WebSocket
   useEffect(() => {
@@ -87,13 +100,54 @@ export default function ChatUI() {
         </span>
       </header>
 
+      <div className="chat-actions">
+        <button
+          onClick={() => {
+            setMessages([]);
+            localStorage.removeItem("chatMessages"); // also clear persisted chat
+          }}
+          className="clear-btn"
+        >
+          🧹 Clear Chat
+        </button>
+      </div>
+
+
       <div className="chat-messages">
         {messages.map((msg, idx) => (
+          // <div
+          //   key={idx}
+          //   className={`message ${msg.sender === "user" ? "user" : "ai"}`}
+          // >
+          //   <div className="message-text">{msg.text}</div>
+          //   <div className="timestamp">
+          //     {new Date().toLocaleTimeString([], {
+          //       hour: "2-digit",
+          //       minute: "2-digit",
+          //     })}
+          //   </div>
+          // </div>
           <div
             key={idx}
             className={`message ${msg.sender === "user" ? "user" : "ai"}`}
           >
-            <div className="message-text">{msg.text}</div>
+            <div className="message-header">
+              {msg.sender === "ai" && (
+                <button
+                  className="copy-btn "
+                  onClick={() => {
+                    navigator.clipboard.writeText(msg.text);
+                  }}
+                >
+                Copy Chat 📋
+                </button>
+              )}
+            </div>
+
+            <div className="message-text markdown">
+              <ReactMarkdown>{msg.text}</ReactMarkdown>
+            </div>
+
             <div className="timestamp">
               {new Date().toLocaleTimeString([], {
                 hour: "2-digit",
@@ -101,6 +155,7 @@ export default function ChatUI() {
               })}
             </div>
           </div>
+
         ))}
         {isAIResponding && (
           <div className="typing">AI is typing<span className="dots">...</span></div>
