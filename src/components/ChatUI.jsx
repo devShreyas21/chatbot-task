@@ -14,6 +14,8 @@ export default function ChatUI() {
   const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef(null);
 
+  const [selectedModel, setSelectedModel] = useState("groq");
+
   // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -77,12 +79,11 @@ export default function ChatUI() {
     if (!input.trim() || !socket || isAIResponding) return;
 
     const userMessage = input.trim();
-
     setMessages((prev) => [...prev, { sender: "user", text: userMessage }]);
     setInput("");
     setIsAIResponding(true);
 
-    socket.emit("user_message", userMessage);
+    socket.emit("user_message", { text: userMessage, model: selectedModel });
   };
 
   const handleKeyPress = (e) => {
@@ -92,13 +93,34 @@ export default function ChatUI() {
   return (
     <div className="chat-container">
       <header className="chat-header">
-        <h2>💬 Real-Time AI Chatbot</h2>
-        <span
-          className={`status-dot ${isConnected ? "connected" : "disconnected"}`}
-        >
-          {isConnected ? "Connected" : "Disconnected"}
-        </span>
+        <div className="header-left">
+          <h2>💬 Real-Time AI Chatbot</h2>
+        </div>
+
+        <div className="header-right">
+          <select
+            value={selectedModel}
+            // onChange={(e) => setSelectedModel(e.target.value)}
+            onChange={(e) => {
+              const newModel = e.target.value;
+              setSelectedModel(newModel);
+              // Clear chat when model changes
+              setMessages([]);
+              localStorage.removeItem("chatMessages");
+            }}
+            className="model-dropdown"
+          >
+            <option value="groq">Groq (LLaMA 3.3)</option>
+            {/* <option value="openai">OpenAI (GPT-3.5-Turbo)</option> */}
+            <option value="gemini">Gemini (Google)</option>
+          </select>
+
+          <span className={`status-dot ${isConnected ? "connected" : "disconnected"}`}>
+            {isConnected ? "Connected" : "Disconnected"}
+          </span>
+        </div>
       </header>
+
 
       <div className="chat-actions">
         <button
@@ -115,18 +137,6 @@ export default function ChatUI() {
 
       <div className="chat-messages">
         {messages.map((msg, idx) => (
-          // <div
-          //   key={idx}
-          //   className={`message ${msg.sender === "user" ? "user" : "ai"}`}
-          // >
-          //   <div className="message-text">{msg.text}</div>
-          //   <div className="timestamp">
-          //     {new Date().toLocaleTimeString([], {
-          //       hour: "2-digit",
-          //       minute: "2-digit",
-          //     })}
-          //   </div>
-          // </div>
           <div
             key={idx}
             className={`message ${msg.sender === "user" ? "user" : "ai"}`}
@@ -139,7 +149,7 @@ export default function ChatUI() {
                     navigator.clipboard.writeText(msg.text);
                   }}
                 >
-                Copy Chat 📋
+                  Copy Chat 📋
                 </button>
               )}
             </div>
