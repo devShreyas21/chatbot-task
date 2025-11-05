@@ -22,20 +22,6 @@ app.prepare().then(() => {
   io.on("connection", (socket) => {
     console.log("🟢 Client connected:", socket.id);
 
-    // socket.on("user_message", async (message) => {
-    //   console.log("📨 Received:", message);
-
-    //   try {
-    //     await streamLLMResponse(message, (chunk) => {
-    //       socket.emit("ai_message_chunk", chunk);
-    //     });
-    //     socket.emit("ai_message_done");
-    //   } catch (err) {
-    //     console.error("❌ LLM error:", err);
-    //     socket.emit("ai_message_error", err.message);
-    //   }
-    // });
-
     socket.on("user_message", async ({ text, model }) => {
       console.log("📨 Received:", text, "via model:", model);
 
